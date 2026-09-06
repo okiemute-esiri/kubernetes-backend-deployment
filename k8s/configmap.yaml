@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: portfolio-backend
+data:
+  NODE_ENV: production
+  APP_REGION: kubernetes
+  PORT: "3000"
