@@ -32,6 +32,7 @@ HorizontalPodAutoscaler -> Deployment
 - `/health` liveness endpoint
 - `/ready` readiness endpoint
 - multi-stage Docker image
+- non-root runtime container
 - Kubernetes Namespace
 - ConfigMap-based runtime configuration
 - Secret reference pattern (example only; no real secret committed)
@@ -41,7 +42,8 @@ HorizontalPodAutoscaler -> Deployment
 - ClusterIP Service
 - HorizontalPodAutoscaler
 - Ingress routing
-- GitHub Actions validation workflow
+- offline Kubernetes schema validation with kubeconform
+- GitHub Actions CI
 
 ## Repository Structure
 
@@ -61,6 +63,7 @@ HorizontalPodAutoscaler -> Deployment
 │   ├── hpa.yaml
 │   └── ingress.yaml
 ├── .github/workflows/ci.yml
+├── .dockerignore
 ├── Dockerfile
 ├── package.json
 └── tsconfig.json
@@ -75,11 +78,26 @@ npm run dev
 
 ## Validation
 
+Application validation:
+
 ```bash
 npm run typecheck
 npm test
 npm run build
-kubectl apply --dry-run=client -f k8s/
+docker build -t kubernetes-backend-deployment:local .
+```
+
+The CI workflow validates Kubernetes manifests offline with `kubeconform`, so validation does not depend on access to a live cluster.
+
+Equivalent local validation when Docker is available:
+
+```bash
+docker run --rm \
+  -v "$PWD/k8s:/manifests:ro" \
+  ghcr.io/yannh/kubeconform:v0.7.0 \
+  -strict \
+  -summary \
+  /manifests
 ```
 
 ## Container
