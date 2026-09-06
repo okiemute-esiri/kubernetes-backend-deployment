@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  application:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - run: docker build -t kubernetes-backend-deployment:ci .
+
+  manifests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
+      - name: Validate manifest syntax
+        run: |
+          kubectl create --dry-run=client --validate=false -f k8s/namespace.yaml -o yaml >/dev/null
+          kubectl create --dry-run=client --validate=false -f k8s/configmap.yaml -o yaml >/dev/null
+          kubectl create --dry-run=client --validate=false -f k8s/deployment.yaml -o yaml >/dev/null
+          kubectl create --dry-run=client --validate=false -f k8s/service.yaml -o yaml >/dev/null
+          kubectl create --dry-run=client --validate=false -f k8s/hpa.yaml -o yaml >/dev/null
+          kubectl create --dry-run=client --validate=false -f k8s/ingress.yaml -o yaml >/dev/null
